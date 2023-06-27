@@ -1,5 +1,10 @@
-import os
 
+import os
+# pylint: disable=import-error, missing-function-docstring, invalid-name
+# from read_csi import *
+
+
+import sys
 from .read_csi import *
 
 
@@ -19,18 +24,19 @@ def read_log_file(filename, ignore_endian=0, endian="", check_tones=1):
             endian = "<"
     ret = []
     tones = -1
-    while (f.tell() < length):
+    while f.tell() < length:
         try:
             csi_inf = unpack_csi_struct(f, endianess=endian)
-            if (tones == -1 and check_tones == 1):
+            if tones == -1 and check_tones == 1:
                 tones = csi_inf.num_tones
-            if (check_tones == 1 and csi_inf.num_tones != tones):
+            if check_tones == 1 and csi_inf.num_tones != tones:
                 continue  # discarding packet with a different amount of tones
-            if (csi_inf.csi == 0):
+            if csi_inf.csi == 0:
                 print("Ignoring packet, no csi information found")
                 continue
             ret.append(csi_inf)
-        except:
+        except Exception as e:
+            print(e)
             print("Corrupt Packet")
             break
     f.close()
@@ -38,7 +44,11 @@ def read_log_file(filename, ignore_endian=0, endian="", check_tones=1):
 
 
 if __name__ == "__main__":
-    file = read_log_file("../../Sandip_Tests/csi.dat")
+    if len(sys.argv) < 2:
+        print("Usage: python3 read_log_file.py <dat_file>")
+        sys.exit(1)
+    dat_path = sys.argv[1]
+    file = read_log_file(dat_path)
     print("Done reading")
 
     for struct in file:

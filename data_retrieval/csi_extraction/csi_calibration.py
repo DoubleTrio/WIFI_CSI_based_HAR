@@ -35,4 +35,5 @@ def calibrate_phase(phases):
 
 def calibrate_amplitude(amplitudes, rssi):  # Basic statistical normalization
     amplitudes = np.array(amplitudes)
+    # return amplitudes
     return ((amplitudes - np.min(amplitudes)) / (np.max(amplitudes) - np.min(amplitudes))) * rssi

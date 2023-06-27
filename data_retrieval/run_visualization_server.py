@@ -1,3 +1,4 @@
+# pylint: disable=import-error, missing-function-docstring, invalid-name
 import argparse
 import csv
 import io
@@ -30,23 +31,35 @@ class UI(QtWidgets.QWidget):
         amp.setLabel('bottom', 'Carrier', units='')
         amp.setLabel('left', 'Amplitude', units='')
         amp.setYRange(0, 1, padding=0)  # for normalized amp values, prev range: 0, 90
+        # amp.setYRange(0, 400, padding=0)  # for normalized amp values, prev range: 0, 90
         amp.setXRange(0, 114 if is_5ghz else 57, padding=0)
         self.penAmp0_0 = amp.plot(pen={'color': (200, 0, 0), 'width': 3})
         self.penAmp0_1 = amp.plot(pen={'color': (200, 200, 0), 'width': 3})
+        self.penAmp0_2 = amp.plot(pen={'color': (137, 49, 239), 'width': 3})
         self.penAmp1_0 = amp.plot(pen={'color': (0, 0, 200), 'width': 3})
         self.penAmp1_1 = amp.plot(pen={'color': (0, 200, 200), 'width': 3})
+        self.penAmp1_2 = amp.plot(pen={'color': (255, 0, 189), 'width': 3})
+        self.penAmp2_0 = amp.plot(pen={'color': (135, 233, 17), 'width': 3})
+        self.penAmp2_1 = amp.plot(pen={'color': (255, 127, 80), 'width': 3}) 
+        self.penAmp2_2 = amp.plot(pen={'color': (0, 0, 0), 'width': 3})
+        # self.ampList = []
 
         phase = self.box_phase
         phase.setBackground('w')
         phase.setWindowTitle('Phase')
         phase.setLabel('bottom', 'Carrier', units='')
         phase.setLabel('left', 'Phase', units='')
-        phase.setYRange(-np.pi, np.pi, padding=0)
+        phase.setYRange(-np.pi - 0.2, np.pi + 0.2, padding=0)
         phase.setXRange(0, 114 if is_5ghz else 57, padding=0)
         self.penPhase0_0 = phase.plot(pen={'color': (200, 0, 0), 'width': 3})
         self.penPhase0_1 = phase.plot(pen={'color': (200, 200, 0), 'width': 3})
+        self.penPhase0_2 = phase.plot(pen={'color': (137, 49, 239), 'width': 3})
         self.penPhase1_0 = phase.plot(pen={'color': (0, 0, 200), 'width': 3})
         self.penPhase1_1 = phase.plot(pen={'color': (0, 200, 200), 'width': 3})
+        self.penPhase1_2 = phase.plot(pen={'color': (255, 0, 189), 'width': 3})
+        self.penPhase2_0 = phase.plot(pen={'color': (135, 233, 17), 'width': 3})
+        self.penPhase2_1 = phase.plot(pen={'color': (255, 127, 80), 'width': 3}) 
+        self.penPhase2_2 = phase.plot(pen={'color': (0, 0, 0), 'width': 3})
 
         self.amp = amp
         self.box_phase = phase
@@ -69,6 +82,28 @@ class UI(QtWidgets.QWidget):
             if len(self.antenna_pairs) > 3:
                 self.penAmp1_1.setData(self.carrier, self.amplitude[3])
                 self.penPhase1_1.setData(self.carrier, self.phase[3])
+            
+            if len(self.antenna_pairs) > 4:
+                self.penAmp0_2.setData(self.carrier, self.amplitude[4])
+                self.penPhase0_2.setData(self.carrier, self.phase[4])
+
+            if len(self.antenna_pairs) > 5:
+                self.penAmp1_2.setData(self.carrier, self.amplitude[5])
+                self.penPhase1_2.setData(self.carrier, self.phase[5])
+
+            if len(self.antenna_pairs) > 6:
+                self.penAmp2_2.setData(self.carrier, self.amplitude[6])
+                self.penPhase2_2.setData(self.carrier, self.phase[6])
+
+
+            if len(self.antenna_pairs) > 7:
+                self.penAmp2_1.setData(self.carrier, self.amplitude[7])
+                self.penPhase2_1.setData(self.carrier, self.phase[7])
+
+            if len(self.antenna_pairs) > 8:
+                self.penAmp2_2.setData(self.carrier, self.amplitude[8])
+                self.penPhase2_2.setData(self.carrier, self.phase[8])
+
 
         self.process_events()  # force complete redraw for every plot
 
@@ -79,10 +114,10 @@ class UI(QtWidgets.QWidget):
 class UDPListener:
     packet_counter = 0
 
-    def __init__(self, save_data_path: str, sock: QtNetwork.QUdpSocket,
-                 form: UI, make_photo: bool = False):
+    def __init__(self, save_data_path: str, sock: QtNetwork.QUdpSocket, form: UI, filename: str, make_photo: bool = False):
         self.save_data_path = save_data_path
         os.makedirs(save_data_path, exist_ok=True)
+        self.filename = filename
 
         self.make_photo = make_photo
         self.cam = cv2.VideoCapture(0) if self.make_photo else None
@@ -101,6 +136,7 @@ class UDPListener:
 
             if csi_inf.csi != 0:  # get csi from data packet, save and process for further visualization
                 raw_peak_amplitudes, raw_phases, carriers_indexes, antenna_pairs = self.get_csi_raw_data(csi_inf)
+                print(raw_peak_amplitudes)
                 self.calc(raw_peak_amplitudes, raw_phases, carriers_indexes, antenna_pairs)
                 self.save_csi_to_file(raw_peak_amplitudes, raw_phases, carriers_indexes)
 
@@ -162,7 +198,7 @@ class UDPListener:
     def make_photo_and_save(self):
         ret, frame = self.cam.read()
 
-        img_name = "opencv_frame_{}.png".format(UDPListener.packet_counter)
+        img_name = "opencv_frame_{}.png".format(self.packet_counter)
         path_to_image = "{}/{}/{}".format(self.save_data_path, "images", img_name)
 
         cv2.imwrite(path_to_image, frame)
@@ -170,7 +206,7 @@ class UDPListener:
 
     def save_csi_to_file(self, raw_peak_amplitudes, raw_phases, carriers):
         # print("Saving CSI data to .csv file...")
-        filename_csv = "data.csv"
+        filename_csv = self.filename
         path_to_csv_file = "{}/{}".format(self.save_data_path, filename_csv)
 
         with open(path_to_csv_file, 'a', newline='\n') as csvfile:
@@ -187,11 +223,12 @@ def init_argparse() -> argparse.ArgumentParser:
     )
 
     parser.add_argument("-f", "--frequency", help="Frequency on which both routes are operating",
-                        choices=['2400MHZ', '5000MHZ'], default='5000MHZ')
+                        choices=['2400MHZ', '5000MHZ'], default='2400MHZ')
     parser.add_argument("-s", "--save_path", help="path to the folder where to save the incoming data",
                         default="./tmp", type=str)
-    parser.add_argument("-p", "--port", help="port to listen to", default=1234, type=int)
+    parser.add_argument("-p", "--port", help="port to listen to", default=60000, type=int)
     parser.add_argument("--photo", help="make webcam photo for each data packet?", default=False, type=bool)
+    parser.add_argument("--file", help="name of the file to save to?", default="data.csv", type=str)
 
     return parser
 
@@ -199,9 +236,7 @@ def init_argparse() -> argparse.ArgumentParser:
 def run_app() -> None:
     parser = init_argparse()
     args = parser.parse_args()
-
     app = QtWidgets.QApplication([])
-
     try:
         udp_socket = QtNetwork.QUdpSocket()
         udp_socket.bind(QtNetwork.QHostAddress.SpecialAddress.Any, args.port)
@@ -210,7 +245,7 @@ def run_app() -> None:
         form.show()
 
         listener = UDPListener(save_data_path=args.save_path, sock=udp_socket,
-                               form=form, make_photo=args.photo)
+                               form=form, filename=args.file, make_photo=args.photo)
         app.exec()
 
     except KeyboardInterrupt as e:

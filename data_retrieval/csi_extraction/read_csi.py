@@ -14,7 +14,7 @@ class csi_struct:
 
 def unpack_csi_struct(f, endianess='>'):  # Big-Endian as Default Value
     csi_inf = csi_struct()
-    csi_inf.field_len = struct.unpack(endianess + 'H', f.read(2))[0]  # Block Length     1Byte
+    csi_inf.field_len = struct.unpack(endianess + 'H', f.read(2))[0]  # Block Length     2Byte
     csi_inf.timestamp = struct.unpack(endianess + 'Q', f.read(8))[0]  # TimeStamp      8Byte
     csi_inf.csi_len = struct.unpack(endianess + 'H', f.read(2))[0]  # csi_len        2Byte
     csi_inf.channel = struct.unpack(endianess + 'H', f.read(2))[0]  # tx             2Byte
@@ -32,16 +32,20 @@ def unpack_csi_struct(f, endianess='>'):  # Big-Endian as Default Value
     csi_inf.payload_len = struct.unpack(endianess + 'H', f.read(2))[
         0]  # payload_len    2Byte Total: 27Byte + csi_len + payload_len
 
+    print("Field length: ",csi_inf.field_len)
+    print("CSI length: ",csi_inf.csi_len)
+    print("Num tones ",csi_inf.num_tones)
+
     if csi_inf.csi_len > 0:
         csi_buf = f.read(csi_inf.csi_len)  # csi        csi_len
         csi_inf.csi = read_csi(csi_buf, csi_inf.num_tones, csi_inf.nc, csi_inf.nr, csi_inf.csi_len, endianess)
     else:
         csi_inf.csi = 0
 
-    if csi_inf.payload_len > 0:
-        payload_buf = f.read(csi_inf.payload_len)  # payload_len    payload_len
-    else:
-        payload_buf = 0
+    # if csi_inf.payload_len > 0:
+    #     payload_buf = f.read(csi_inf.payload_len)  # payload_len    payload_len
+    # else:
+    #     payload_buf = 0
 
     return csi_inf
 
@@ -109,7 +113,7 @@ def signbit_convert(data, maxbit):
 def calc_frequency(basefrequency, c, num_tones):
     per_side = num_tones / 2
     step = 0.3125
-    if (c < per_side):  # Carrier is on left side of centerfrequency
+    if (c < per_side):  # Carrier is on left side of center frequency
         freq = basefrequency - (per_side - c) * step
     else:
         freq = basefrequency + (c + 1 - per_side) * step
