@@ -5,7 +5,7 @@ import io
 import os
 from copy import deepcopy
 import time
-import cv2
+# import cv2
 import numpy as np
 from PyQt6 import QtNetwork, QtWidgets, uic
 
@@ -82,7 +82,7 @@ class UI(QtWidgets.QWidget):
             print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
             worker = Worker(self.useCamera)
             worker.signals.result.connect(self.print_output)
-            worker.signals.finished.connect(self.thread_complete)
+            worker.signals.finished.connect(self.print_finished)
 
             self.threadpool.start(worker)
 
