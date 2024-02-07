@@ -5,7 +5,7 @@ import io
 import os
 from copy import deepcopy
 import time
-# import cv2
+import cv2
 import numpy as np
 from PyQt6 import QtNetwork, QtWidgets, uic
 
@@ -322,7 +322,7 @@ def init_argparse() -> argparse.ArgumentParser:
         "-s",
         "--save_path",
         help="Path to the folder where to save the incoming data",
-        default="./tmp",
+        default=".",
         type=str,
     )
     parser.add_argument(
@@ -343,7 +343,7 @@ def init_argparse() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--file", help="Name of the file to save to?", default="data.csv", type=str
+        "--file", help="Name of the file to save to?", default="csi_data.csv", type=str
     )
 
     return parser
