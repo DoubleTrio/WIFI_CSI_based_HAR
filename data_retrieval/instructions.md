@@ -29,3 +29,4 @@
 8. Open another terminal/console on your computer and run [run_visualization_server.py](https://github.com/DoubleTrio/WIFI_CSI_based_HAR/blob/master/data_retrieval/run_visualization_server.py) with the command `python3 run_visualization_server.py`
     - Do note that the visualization server struggles when the packets are sent at a rate faster than 1 packet per second. Thus, ideally the server code is fixed or rewritten
 9. If everything is working, you should be able to see the phase and amplitude visualized real-time!
+10. Alternatively, you can run `./run_setup.sh <IP_ADDRESS> <PACKET_RATE>` (you may have to modify the shell script to fit your needs)
