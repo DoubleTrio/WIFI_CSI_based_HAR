@@ -1,10 +1,12 @@
-Testing
+# Requirements:
+	Python:
+		- numpy
+		- pyqt6
+		- pyqtgraph
+		- opencv-python
+
 # Before Anything Else:
-	- Install Python
-	- Install pyqt6
-	- Install pyqtgraph
-	- Install opencv-python
-	- Clone https://github.com/DoubleTrio/WIFI_CSI_based_HAR (We just need the "data_retrieval" folder)
+	- Clone https://github.com/DoubleTrio/WIFI_CSI_based_HAR
 		- Alternate cloning method using sparse checkout for data_retrieval subdirectory:
 			- Create empty git repo
 				- git init
@@ -14,7 +16,6 @@ Testing
 				- git sparse-checkout set data_retrieval
 		- sparse-checkout documentation
 			- https://git-scm.com/docs/git-sparse-checkout
-	- uncomment line 8: "import cv2" in data_retrieval/run_visualization_server.py
 
 # Running the Entire Setup
 
