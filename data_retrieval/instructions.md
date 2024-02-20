@@ -12,6 +12,7 @@
 				- git init
 			- Add repo origin as repo .git url
 				- git remote add -f origin  https://github.com/DoubleTrio/WIFI_CSI_based_HAR.git
+					- use any clone url for this (https not required)
 			- set checkout directory
 				- git sparse-checkout set data_retrieval
 		- sparse-checkout documentation
