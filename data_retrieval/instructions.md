@@ -22,7 +22,8 @@
 
 1. Plug MirandaTheRouter and PhileasTheRouter in with a charger
 2. Connect the computer to MirandaTheRouter with an Ethernet cord
-3. Also connect the computer to PhileasTheRouter through WiFi, so change from Ursinus Secure -> PhileasTheRouter (use the WiFi password if necessary)
+3. Also connect the computer to PhileasTheRouter through WiFi, so change from (Connected WiFi) -> PhileasTheRouter (use the WiFi password if necessary)
+3.1. Alternate visualization method: run run_setup.sh script
 4. First in the computer terminal, login into MirandaTheRouter with the command `ssh root@192.168.1.1`
 5. In another terminal, login into PhileasTheRouter with the command `ssh root@192.168.2.1`
 6. In MirandaTheRouter's SSH terminal, run the command `./receive_data.sh <IP_ADDRESS>`. 
