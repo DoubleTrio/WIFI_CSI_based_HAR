@@ -1,37 +1,23 @@
-import bisect
 import numpy as np
+from multiprocessing import Pool
+
+# References:
+# https://thedeadbeef.wordpress.com/2010/06/16/calculating-variance-and-mean-with-mapreduce-python/
+# https://qxf2.com/blog/run-your-api-tests-in-parallel-mapreducepython/
+
+# Planned/Notes:
+# 64 or 128 threads
+# opt/research/dense_pose
 
 class F_Score_Opt:
-    def __init__(self, filename, timestamp):
-        self.filename = filename #filename for where the data set is stored
-        self.timestamp = timestamp #timestamp to temporally split data on
-        self.timestamps = [] #timestamps from data set
-        self.data = [] #data from data set with each row having an associated timestamp
-        self.split_idx = None
-        self.f_scores = []
-        
-        f = open(filename)
-        contents = f.readlines()
-        for line in contents:
-            split_arr = line.split(",")
-            self.timestamps.append(split_arr[1]) #extract just timestamps to its own array
-            middle = np.asfarray(split_arr[2:],dtype=float)
-            self.data.append(middle) #don't need channel count or timestamp in the raw data array
-        f.close()
-        self.timestamps = np.asfarray(self.timestamps,dtype=float)
-        self.data = np.array(self.data)
-        
-    def get_temporal_idx(self):
-        """uses the given timestamp in initialization to find the index of where the data should be split
-        Returns
-        -------
-        index of the value closest to the initialized timestamp (rounded up)
-        """
-        idx = bisect.bisect_left(self.timestamps, self.timestamp) #binary search for the index so its slightly faster (hopefully)
-        if self.timestamps[idx] < self.timestamp:
-            idx += 1
-        self.split_idx = idx
-        return idx
+    def __init__(self, states, blocks, thread_count):
+        self.states = states #labels for the blocks of data
+        self.blocks = blocks #array of data blocks to be compared
+        self.thread_count = thread_count #how many threads to use for parallel processing
+        self.labels = [(a,b) for idx, a in enumerate(self.states) for b in self.states[idx + 1:]] #sets up labels for data pairs
+        self.pairs = [(a,b) for idx, a in enumerate(self.blocks) for b in self.blocks[idx + 1:]] #sets up our data pairs for comparison
+        self.pair_scores = [] #list of fischer scores for each pair of data, tuple'd with combined labels ie ((labels), score)
+        self.statistics = {} #dictionary for recording statistics so we don't rerun mean and variance on a pair multiple times
     
     def mapFunc(self, row):
         """find the sample size, mean, and variance of a given set of data
@@ -48,7 +34,7 @@ class F_Score_Opt:
         """combines the mean and variance of two different smaller samples by taking weighted combinations
 
         Args:
-            row1 (list): 3 element list containing the first sets: sample size, mean, and variance
+            row1 (list): block of data to combine with another block
             row2 (list): same as row 1 but for a second sample set
 
         Returns:
@@ -63,22 +49,40 @@ class F_Score_Opt:
         return xAB, vAB
     
     def get_f_score(self):
-        """for each column in the data set, this splits the column at the pre-determined index
-            and will then find the t-score for the two arrays from the split
+        """finds the f scores for all data block pairs
         """
-        if self.split_idx is None: #if you don't manually get the index, it will just do it for you
-            self.get_temporal_idx()
-        arr_a = []
-        arr_b = []
-        data = np.swapaxes(self.data, 0, 1) #swap row and column indexes for easier navigation
-        for column in data:
-            arr_a = column[0:self.split_idx] #sample set 1
-            arr_b = column[self.split_idx:] #sample set 2
-            
-            # Using "reduceFunc" and threading, determine
-            # the mean and variance of the two sets of 
-            # data and calculate their fischer score
-            
+        for i in range(len(self.pairs)):
+            priorA = self.statistics.get(self.labels[i][0])
+            if priorA:
+                xA, vA = priorA
+            priorB = self.statistics.get(self.labels[i][1])
+            if priorB:
+                xB, vB = priorB
+
+            if not priorA and not priorB: #redundancy prevention
+                total_lines = len(self.pairs[i][0]) + len(self.pairs[i][1])
+                chunk_size = int(total_lines / self.thread_count) #determine roughly how large each block of data should be
+                                                                    # to maximize parallel efficiency
+                
+                paralell_processes = min(total_lines, self.thread_count)
+                pool = Pool(processes=paralell_processes) #set up parallel threads
+                
+                if not priorA:
+                    chunkA = np.array_split(self.pairs[i][0], chunk_size)
+                    xA, vA = pool.map(self.reduceFunc, chunkA)
+                    
+                    stat = (xA, vA)
+                    label = self.labels[i][0]
+                    self.statistics.update({label:stat})
+                
+                if not priorB:
+                    chunkB = np.array_split(self.pairs[i][1], chunk_size)
+                    xB, vB = pool.map(self.reduceFunc, chunkB)
+                    
+                    stat = (xB, vB)
+                    label = self.labels[i][1]
+                    self.statistics.update({label:stat})
+                
             f_score = ((xA-xB)**2)/(vA+vB) #final f score for the channel
-            self.f_scores.append(f_score)
+            self.pair_scores.append((self.labels[i], f_score))
         return self.f_scores
