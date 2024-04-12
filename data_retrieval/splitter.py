@@ -8,7 +8,8 @@ class Splitter:
         self.posts = posts #the timestamps where conditions were altered (in minutes since experiment's start)
         self.margin = margin #the amount of time surrounding the Posts to cut from the data (in minutes)
         self.timestamps = [] #time indexes for the data lines
-        self.split = [] #the split data with each cleaned block being one of the indexes
+        self.split_data = [] #the split data with each cleaned block being one of the indexes
+        self.data = []
         
         f = open(filename)
         contents = f.readlines()
@@ -28,10 +29,14 @@ class Splitter:
         index_margin = int(( self.margin * 60 * 1000 ) / self.rate) #converts margin to indexes for easier data clean-up
         prior = index_margin
         for post in self.posts:
-            post_ms = post * 60 * 1000
+            post_ms = self.timestamps[0] + (post * 60 * 1000)
             idx = bisect.bisect_left(self.timestamps, post_ms) #bin search for the post's location
             block = self.data[prior:(idx-index_margin)] #creation of the clipped data block
             prior = idx+index_margin #updating the prior for the next block
             if prior > len(self.data): #failsafe in case one of the post's is way too close to the end of data collection
                 prior = len(self.data) - 1              #this data should not be used, but the program should still run
-            self.split.append(block)
+            block = np.swapaxes(block, 0, 1)
+            self.split_data.append(block)
+        block = self.data[prior:(len(self.data)-index_margin)] #makes final block of data (which technically does not have an associated post)
+        block = np.swapaxes(block, 0, 1)
+        self.split_data.append(block)
