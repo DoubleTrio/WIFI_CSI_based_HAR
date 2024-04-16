@@ -1,4 +1,4 @@
-from multiprocessing import Pool
+import multiprocessing as mp
 import numpy as np
 
 # References:
@@ -19,75 +19,91 @@ class F_Score_Opt:
         self.pair_scores = [] #list of fischer scores for each pair of data, tuple'd with combined labels ie ((labels), score)
         self.statistics = {} #dictionary for recording statistics so we don't rerun mean and variance on a pair multiple times
     
-    def mapFunc(self, row):
-        """find the sample size, mean, and variance of a given set of data
+    def set_mean_stat(self, chunk):
+        """find the sample size and sum of a given set of data
 
         Args:
-            row (list): the set of data to find the aforementioned statistics for
+            chunk (list): the set of data to find the aforementioned statistics for
 
         Returns:
-            nA, xA, vA: returns the sample size, mean, and variance as calculated by Numpy
+            nA, xA, vA: returns the sample size and sum
         """
-        return (np.size(row), np.mean(row), np.var(row))
+        return (np.sum(chunk), len(chunk))
     
-    def reduceFunc(self, rows):
-        """combines the mean and variance of two different smaller samples by taking weighted combinations
+    def set_var_stat(self, chunk, mean):
+        """finds the sum of squares for a given chunk of data
 
         Args:
-            row1 (list): block of data to combine with another block
-            row2 (list): same as row 1 but for a second sample set
-
-        Returns:
-            xAB: combined mean of the two samples
-            vAB: combined variance of the two samples
+            chunk (list): set of data to find the sum of squares of
+            mean (float): mean of the chunk
         """
-        (row1, row2) = rows
-        nA, xA, vA = self.mapFunc(row1) #row 1 is made up of the sample size, mean, and variance of A
-        nB, xB, vB = self.mapFunc(row2) #sample sizes are prefixed with 'n', means with 'x', and variances with 'v'
-        nAB = nA + nB
-        xAB = ((xA * nA) + (xB * nB)) / nAB
-        vAB = (((nA * vA) + (nB * vB)) / nAB) * ((xB - xA) / nAB)**2
-        return (xAB, vAB)
+        return np.sum((chunk-mean)**2)
+
+    def set_mean_var_stat(self, data):
+        """finds the mean and variance of a given data set using parallel processing
+
+        Args:
+            data (list): set of data to find the mean and variance of
+            
+        Rets:
+            x (float): mean of data set
+            v (float): variance of data set
+        """
+        if self.thread_count == "max":
+            num = mp.cpu_count()
+            pool = mp.Pool(processes=num)
+            self.thread_count = num
+        else:
+            self.thread_count = int(self.thread_count)
+            pool = mp.Pool(processes=self.thread_count)
+            
+        #determine suitable chunk size for parallel processing
+        chunk_size = int(np.ceil(len(data)/self.thread_count))
+        chunks = [data[i:i+chunk_size] for i in range(0, len(data), chunk_size)]
+        
+        #find sums and sample size of chunks of data
+        ret = pool.map(self.set_mean_stat, chunks)
+        
+        xt, nt = sum(result[0] for result in ret), sum(result[1] for result in ret)
+        x = xt / nt #summed sums divided by summed sample sizes = overall mean
+        
+        #find sum of squares for chunks using parallel processing
+        part_sos = pool.starmap(self.set_var_stat, [(chunk, x) for chunk in chunks])
+        
+        sost = sum(part_sos)
+        v = sost / nt
+        
+        return x, v
     
     def get_f_score(self):
         """finds the f scores for all data block pairs
         """
         
         for i in range(len(self.pairs)): #loop through all pairs
+            print("Pair", i)
             for j in range(len(self.blocks[0][0])): #loop through all channels
-                priorA = self.statistics.get(self.labels[i][0][j])
+                print("Channel", j)
+                priorA = self.statistics.get((self.labels[i][0],j))
                 if priorA:
                     xA, vA = priorA
-                priorB = self.statistics.get(self.labels[i][1][j])
+                priorB = self.statistics.get((self.labels[i][1],j))
                 if priorB:
                     xB, vB = priorB
 
                 if not priorA and not priorB: #redundancy prevention
-                    total_lines = len(self.pairs[i][0]) + len(self.pairs[i][1])
-                    parallel_processes = min(total_lines, self.thread_count)
-                    pool = Pool(processes=parallel_processes) #set up parallel threads
-                    
                     if not priorA:
-                        chunkA = np.array_split(self.pairs[i][0][j], 2)
-                        inp = (chunkA[0], chunkA[1])
-                        chunks = np.array_split(chunkA, self.thread_count)
-                        #print(chunks)
-                        ret = pool.map(self.reduceFunc, [[0, 1],[1, 2]])
-                        xA, vA = ret
+                        xA, vA = self.set_mean_var_stat(self.pairs[i][0][j])
                         stat = (xA, vA)
-                        label = self.labels[i][0] + str(j)
+                        label = (self.labels[i][0],j)
                         self.statistics.update({label:stat})
                     
                     if not priorB:
-                        chunkB = np.array_split(self.pairs[i][1][j], self.thread_count)
-                        chunks = np.array_split(chunkB, 2)
-                        inp = (chunks[0], chunks[1])
-                        xB, vB = pool.map(self.reduceFunc, inp)
-                        
+                        xB, vB = self.set_mean_var_stat(self.pairs[i][1][j])
                         stat = (xB, vB)
-                        label = self.labels[i][1] + str(j)
+                        label = (self.labels[i][1],j)
                         self.statistics.update({label:stat})
                     
                 f_score = ((xA-xB)**2)/(vA+vB) #final f score for the channel
-                self.pair_scores.append((self.labels[i] + str(j), f_score))
+                lab = (self.labels[i][0], self.labels[i][1], j)
+                self.pair_scores.append((lab, f_score))
         return self.pair_scores

@@ -1,0 +1,7 @@
+csi_sample_data.csv
+1000
+1.5
+0.05
+max
+treatment_A,treatment_B
+results.txt

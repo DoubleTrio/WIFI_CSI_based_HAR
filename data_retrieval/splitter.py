@@ -29,6 +29,7 @@ class Splitter:
         index_margin = int(( self.margin * 60 * 1000 ) / self.rate) #converts margin to indexes for easier data clean-up
         prior = index_margin
         for post in self.posts:
+            post = float(post)
             post_ms = self.timestamps[0] + (post * 60 * 1000)
             idx = bisect.bisect_left(self.timestamps, post_ms) #bin search for the post's location
             block = self.data[prior:(idx-index_margin)] #creation of the clipped data block

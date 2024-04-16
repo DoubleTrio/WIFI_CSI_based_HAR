@@ -42,9 +42,10 @@ class F_Score:
         arr_a = []
         arr_b = []
         data = np.swapaxes(self.data, 0, 1) #swap row and column indexes for easier navigation
-        for column in data:
-            arr_a = column[0:self.split_idx]
-            arr_b = column[self.split_idx:]
+        for i in range(len(data)):
+            print("Channel", i)
+            arr_a = data[i][0:self.split_idx]
+            arr_b = data[i][self.split_idx:]
             mean_a = np.mean(arr_a)
             mean_b = np.mean(arr_b)
             var_a = np.var(arr_a)
