@@ -32,6 +32,7 @@ class Splitter:
             post = float(post)
             post_ms = self.timestamps[0] + (post * 60 * 1000)
             idx = bisect.bisect_left(self.timestamps, post_ms) #bin search for the post's location
+            print("Post", post, " Found @ Index", idx)
             block = self.data[prior:(idx-index_margin)] #creation of the clipped data block
             prior = idx+index_margin #updating the prior for the next block
             if prior > len(self.data): #failsafe in case one of the post's is way too close to the end of data collection
