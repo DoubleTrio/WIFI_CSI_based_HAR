@@ -1,5 +1,6 @@
 import multiprocessing as mp
 import numpy as np
+import tqdm
 
 # References:
 # https://thedeadbeef.wordpress.com/2010/06/16/calculating-variance-and-mean-with-mapreduce-python/
@@ -39,7 +40,7 @@ class F_Score_Opt:
         """
         return np.sum((chunk-mean)**2)
 
-    def set_mean_var_stat(self, data):
+    def set_mean_var_stat(self, data, pool):
         """finds the mean and variance of a given data set using parallel processing
 
         Args:
@@ -48,15 +49,7 @@ class F_Score_Opt:
         Rets:
             x (float): mean of data set
             v (float): variance of data set
-        """
-        if self.thread_count == "max":
-            num = mp.cpu_count()
-            pool = mp.Pool(processes=num)
-            self.thread_count = num
-        else:
-            self.thread_count = int(self.thread_count)
-            pool = mp.Pool(processes=self.thread_count)
-            
+        """ 
         #determine suitable chunk size for parallel processing
         chunk_size = int(np.ceil(len(data)/self.thread_count))
         chunks = [data[i:i+chunk_size] for i in range(0, len(data), chunk_size)]
@@ -78,6 +71,13 @@ class F_Score_Opt:
     def get_f_score(self):
         """finds the f scores for all data block pairs
         """
+        if self.thread_count == "max":
+            num = mp.cpu_count()
+            pool = mp.Pool(processes=num)
+            self.thread_count = num
+        else:
+            self.thread_count = int(self.thread_count)
+            pool = mp.Pool(processes=self.thread_count)
         
         for i in range(len(self.pairs)): #loop through all pairs
             print("Pair", i)
@@ -92,13 +92,13 @@ class F_Score_Opt:
 
                 if not priorA and not priorB: #redundancy prevention
                     if not priorA:
-                        xA, vA = self.set_mean_var_stat(self.pairs[i][0][j])
+                        xA, vA = self.set_mean_var_stat(self.pairs[i][0][j], pool)
                         stat = (xA, vA)
                         label = (self.labels[i][0],j)
                         self.statistics.update({label:stat})
                     
                     if not priorB:
-                        xB, vB = self.set_mean_var_stat(self.pairs[i][1][j])
+                        xB, vB = self.set_mean_var_stat(self.pairs[i][1][j], pool)
                         stat = (xB, vB)
                         label = (self.labels[i][1],j)
                         self.statistics.update({label:stat})
