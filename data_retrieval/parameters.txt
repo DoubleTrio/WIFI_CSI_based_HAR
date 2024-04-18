@@ -2,6 +2,6 @@
 20
 92,195,278
 5
-max
+16
 both_down,left_up,right_up,both_up
 results.txt
