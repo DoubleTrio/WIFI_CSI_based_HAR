@@ -17,8 +17,9 @@ def fetch_parameters(filename):
     thread_count = str(contents[4].strip('\n'))
     states = contents[5].strip('\n').split(",")
     output_file = str(contents[6].strip('\n'))
+    split_file = str(contents[7].strip('\n'))
     f.close()
-    return data_file, data_rate, data_posts, data_margin, thread_count, states, output_file
+    return data_file, data_rate, data_posts, data_margin, thread_count, states, output_file, split_file
 
 def run_splitter(filename, rate, posts, margin):
     """runs splitter.py to clean up data
@@ -56,10 +57,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = "sample argument parser")
     parser.add_argument("Runner_Filename")
     args = parser.parse_args()
-    filename, rate, posts, margin, threads, states, output_file = fetch_parameters(args.Runner_Filename)
+    filename, rate, posts, margin, threads, states, output_file, split_file = fetch_parameters(args.Runner_Filename)
     f = open(output_file, "x")
     print("Data Splitter Starting...")
     data = run_splitter(filename, rate, posts, margin)
+    fs = open(split_file, "x")
+    fs.write(data)
+    fs.close()
     print("Data Split Complete!")
     print("Starting F Score Calculations...")
     results = run_f_score(states, data, threads)
