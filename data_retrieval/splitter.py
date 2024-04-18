@@ -31,7 +31,7 @@ class Splitter:
         for post in self.posts:
             print("post",post)
             post_ms = post * 60 * 1000
-            print("post_ms",post_ms,"+","self.timestamps[0]",self.timestamps[0],"=",post_ms+self.timestamps[0])
+            print("post_ms",str(post_ms),"+ self.timestamps[0]",str(self.timestamps[0]),"=",str(post_ms+self.timestamps[0]))
             post_ms += self.timestamps[0]
             idx = bisect.bisect_left(self.timestamps, post_ms) #bin search for the post's location
             print("Post", post, " Found @ Index", idx)
