@@ -1,6 +1,5 @@
 import multiprocessing as mp
 import numpy as np
-import tqdm
 
 # References:
 # https://thedeadbeef.wordpress.com/2010/06/16/calculating-variance-and-mean-with-mapreduce-python/
