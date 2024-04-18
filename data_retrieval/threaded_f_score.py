@@ -49,6 +49,14 @@ class F_Score_Opt:
             x (float): mean of data set
             v (float): variance of data set
         """ 
+        if self.thread_count == "max":
+            num = mp.cpu_count()
+            pool = mp.Pool(processes=num)
+            self.thread_count = num
+        else:
+            self.thread_count = int(self.thread_count)
+            pool = mp.Pool(processes=self.thread_count)
+        
         #determine suitable chunk size for parallel processing
         chunk_size = int(np.ceil(len(data)/self.thread_count))
         chunks = [data[i:i+chunk_size] for i in range(0, len(data), chunk_size)]
@@ -70,13 +78,6 @@ class F_Score_Opt:
     def get_f_score(self):
         """finds the f scores for all data block pairs
         """
-        if self.thread_count == "max":
-            num = mp.cpu_count()
-            pool = mp.Pool(processes=num)
-            self.thread_count = num
-        else:
-            self.thread_count = int(self.thread_count)
-            pool = mp.Pool(processes=self.thread_count)
         
         for i in range(len(self.pairs)): #loop through all pairs
             print("Pair", i)
