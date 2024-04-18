@@ -29,6 +29,7 @@ class Splitter:
         index_margin = int(( self.margin * 60 * 1000 ) / self.rate) #converts margin to indexes for easier data clean-up
         prior = index_margin
         for post in self.posts:
+            post = float(post)
             print("post",post)
             post_ms = post * 60 * 1000
             print("post_ms",str(post_ms),"+ self.timestamps[0]",str(self.timestamps[0]),"=",str(post_ms+self.timestamps[0]))
