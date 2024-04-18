@@ -62,7 +62,7 @@ if __name__ == '__main__':
     print("Data Splitter Starting...")
     data = run_splitter(filename, rate, posts, margin)
     fs = open(split_file, "x")
-    out = "\n".join(str(element) for element in data)
+    out = "\n".join(str(element) for element in data.copy())
     fs.write(out)
     fs.close()
     print("Data Split Complete!")

@@ -39,7 +39,7 @@ class F_Score_Opt:
         """
         return np.sum((chunk-mean)**2)
 
-    def set_mean_var_stat(self, data, pool):
+    def set_mean_var_stat(self, data):
         """finds the mean and variance of a given data set using parallel processing
 
         Args:
@@ -92,13 +92,13 @@ class F_Score_Opt:
 
                 if not priorA and not priorB: #redundancy prevention
                     if not priorA:
-                        xA, vA = self.set_mean_var_stat(self.pairs[i][0][j], pool)
+                        xA, vA = self.set_mean_var_stat(self.pairs[i][0][j])
                         stat = (xA, vA)
                         label = (self.labels[i][0],j)
                         self.statistics.update({label:stat})
                     
                     if not priorB:
-                        xB, vB = self.set_mean_var_stat(self.pairs[i][1][j], pool)
+                        xB, vB = self.set_mean_var_stat(self.pairs[i][1][j])
                         stat = (xB, vB)
                         label = (self.labels[i][1],j)
                         self.statistics.update({label:stat})
