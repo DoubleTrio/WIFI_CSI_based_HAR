@@ -20,6 +20,13 @@ class Splitter:
             middle = np.asfarray(split_arr[2:],dtype=float)
             self.data.append(middle) #don't need channel count or timestamp in the raw data array
         f.close()
+        loop_idx = []
+        for i in range(1,len(self.timestamps)): #break overflow issues from data collection
+            if self.timestamps[i] < self.timestamps[i-1]:
+                loop_idx.append(i-1)
+            if len(loop_idx) > 0:
+                for idx in loop_idx:
+                    self.timestamps[i] += self.timestamps[idx]
         self.timestamps = np.asfarray(self.timestamps,dtype=float)
         self.data = np.array(self.data)
         
@@ -32,7 +39,7 @@ class Splitter:
         for post in self.posts:
             post = float(post)
             print("post",post)
-            post_ms = post * 60 * 1000
+            post_ms = post * 60 * 1000 #1012189039 729606785
             print("post_ms",str(post_ms),"+ self.timestamps[0]",str(self.timestamps[0]),"=",str(post_ms+self.timestamps[0]))
             post_ms += self.timestamps[0]
             idx = bisect.bisect_left(self.timestamps, post_ms) #bin search for the post's location
